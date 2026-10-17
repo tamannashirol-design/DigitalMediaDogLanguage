@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Read the Room</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11/lib/p5.min.js"></script>
+    <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=3" />
+    <style>
+      #status {
+        position: fixed; left: 12px; top: 8px; z-index: 50;
+        font: 12px/1.3 Helvetica, Arial, sans-serif; color: #231a17;
+        background: rgba(255,255,255,0.85); padding: 4px 10px; border-radius: 8px;
+        max-width: 70vw; pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status">starting…</div>
+
+    <div id="dog-wrap">
+      <svg class="dog-portrait" viewBox="0 0 800 800" role="img" aria-label="An animated golden puppy">
+        <defs>
+          <linearGradient id="golden-fur" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" style="stop-color:var(--fur-light)" />
+            <stop offset="1" style="stop-color:var(--fur)" />
+          </linearGradient>
+          <linearGradient id="ear-fur" x1="0" y1="0" x2="0.8" y2="1">
+            <stop offset="0" style="stop-color:var(--fur)" />
+            <stop offset="1" style="stop-color:var(--fur-dark)" />
+          </linearGradient>
+          <linearGradient id="bell-gold" x1="0.2" y1="0" x2="0.8" y2="1">
+            <stop offset="0" style="stop-color:var(--bell-light)" />
+            <stop offset="1" style="stop-color:var(--bell)" />
+          </linearGradient>
+        </defs>
+
+        <ellipse class="ground-shadow" cx="405" cy="685" rx="238" ry="30" />
+
+        <g class="noise-visual" aria-hidden="true">
+          <path class="noise-wave noise-wave-one" d="M191 270C151 310 140 368 158 419" />
+          <path class="noise-wave noise-wave-two" d="M148 229C89 288 74 387 107 461" />
+          <path class="noise-wave noise-wave-one" d="M610 258C655 301 668 360 650 416" />
+          <path class="noise-wave noise-wave-two" d="M655 217C718 278 733 380 697 458" />
+          <path class="noise-zap" d="M172 507L128 525L159 548L112 570" />
+          <path class="noise-zap" d="M636 498L683 514L655 540L705 561" />
+        </g>
+
+        <g class="tail">
+          <path class="tail-fur" d="M228 598C164 590 119 544 120 480C121 438 143 402 176 375C168 420 178 452 204 475C217 436 237 419 256 407C242 454 252 493 281 527C266 562 252 585 228 598Z" />
+          <path class="tail-tip" d="M176 375C168 420 178 452 204 475C210 456 220 440 231 428C215 410 198 392 176 375Z" />
+        </g>
+
+        <g class="dog-body">
+          <path class="body-fur" d="M274 429C313 388 382 372 457 394C527 414 568 471 563 553C560 603 541 644 510 669H254C221 639 218 579 237 521C246 490 256 456 274 429Z" />
+          <path class="hind-leg" d="M301 510C247 513 208 557 214 622C217 653 241 674 278 676H350C368 676 374 649 358 639L331 621C347 574 333 531 301 510Z" />
+          <path class="chest" d="M396 410C419 409 445 416 465 430C452 455 461 476 483 492C470 505 475 526 491 540C473 548 471 568 478 584C454 580 449 605 443 626C423 604 406 563 393 520C381 480 377 441 396 410Z" />
+
+          <path class="front-leg" d="M370 495C397 490 418 507 418 536L419 637C436 637 451 649 451 665C451 683 436 693 415 693H347C325 693 312 678 318 660L350 530C355 511 360 498 370 495Z" />
+          <path class="front-leg" d="M491 485C518 482 538 500 539 529L543 632C570 633 592 648 592 668C592 685 576 694 554 694H481C461 694 449 680 454 662L472 520C475 500 481 487 491 485Z" />
+          <g class="paw-trigger" role="button" tabindex="0" aria-label="Touch the puppy's left paw to make it angry">
+            <path class="paw-fill" d="M318 660C331 640 354 635 381 643C404 632 433 641 447 658C462 677 442 693 415 693H347C325 693 312 678 318 660Z" />
+            <path class="paw-line" d="M360 653C366 665 365 678 362 690" />
+            <path class="paw-line" d="M401 653C407 666 406 680 403 691" />
+          </g>
+          <g class="paw-trigger" role="button" tabindex="0" aria-label="Touch the puppy's right paw to make it angry">
+            <path class="paw-fill" d="M454 662C464 641 489 634 514 644C539 633 575 642 588 659C601 677 580 694 554 694H481C461 694 449 680 454 662Z" />
+            <path class="paw-line" d="M499 654C505 667 504 680 501 691" />
+            <path class="paw-line" d="M543 654C549 667 548 680 545 691" />
+          </g>
+        </g>
+
+        <path class="alert-hackles" d="M491 469L514 425L527 445L548 405L554 441L578 417L568 477Z" />
+
+        <g class="collar">
+          <path class="collar-band" d="M291 432C350 466 444 477 514 434L525 469C463 513 350 507 279 466Z" />
+          <g class="bell">
+            <rect class="bell-loop" x="401" y="481" width="25" height="37" rx="12" />
+            <circle class="bell-body" cx="414" cy="530" r="31" />
+            <path class="bell-shine" d="M399 516C403 509 409 506 416 505" />
+          </g>
+        </g>
+
+        <g class="head head-trigger" role="button" tabindex="0" aria-label="Pet the puppy's head">
+          <g class="ear ear-left">
+            <path class="ear-fur" d="M285 197C231 195 187 219 171 264C158 301 130 330 122 357C111 394 133 427 169 450C194 466 215 456 227 433C242 403 244 373 241 339C238 301 254 263 285 233Z" />
+          </g>
+          <g class="ear ear-right">
+            <path class="ear-fur" d="M512 183C563 171 591 193 617 230C639 261 679 281 688 319C696 352 682 392 655 426C635 451 608 446 590 425C568 400 553 373 545 337C537 300 518 260 493 235Z" />
+          </g>
+
+          <path class="head-fur" d="M280 188C314 135 358 106 416 107C488 108 546 149 574 218C599 279 598 364 563 422C529 479 464 502 391 494C316 486 250 454 230 391C208 322 225 241 280 188Z" />
+          <path class="hair-tuft" d="M315 174C321 138 339 109 362 87C363 105 362 121 367 137C381 108 401 85 431 70C426 94 416 113 404 129C421 117 438 112 457 112C445 139 420 159 392 174Z" />
+
+          <path class="eyebrow eyebrow-left" d="M280 259C294 235 312 224 334 223" />
+          <path class="eyebrow eyebrow-right" d="M476 217C496 211 516 217 530 236" />
+
+          <g class="eye eye-left">
+            <ellipse class="eye-white" cx="331" cy="315" rx="52" ry="65" />
+            <ellipse class="iris" cx="343" cy="327" rx="33" ry="46" />
+            <ellipse class="pupil" cx="350" cy="328" rx="22" ry="34" />
+            <circle class="eye-shine" cx="339" cy="308" r="11" />
+            <circle class="eye-shine" cx="357" cy="328" r="5" />
+          </g>
+          <g class="eye eye-right">
+            <ellipse class="eye-white" cx="480" cy="315" rx="52" ry="65" />
+            <ellipse class="iris" cx="468" cy="327" rx="33" ry="46" />
+            <ellipse class="pupil" cx="461" cy="328" rx="22" ry="34" />
+            <circle class="eye-shine" cx="472" cy="308" r="11" />
+            <circle class="eye-shine" cx="454" cy="328" r="5" />
+          </g>
+
+          <path class="muzzle" d="M310 374C331 340 374 331 410 349C447 332 499 342 523 374C551 411 523 459 480 474C451 484 428 477 409 463C385 482 352 487 322 470C283 448 284 408 310 374Z" />
+          <g class="happy-blush">
+            <ellipse cx="330" cy="410" rx="28" ry="14" />
+            <ellipse cx="492" cy="405" rx="28" ry="14" />
+          </g>
+          <path class="nose" d="M368 368C378 350 402 342 427 346C452 350 466 364 459 382C452 400 427 416 408 414C388 411 359 386 368 368Z" />
+          <path class="nose-shine" d="M390 361C401 354 414 353 425 356" />
+          <path class="face-line" d="M409 413C410 428 412 438 422 446" />
+          <path class="smile" d="M408 432C382 450 348 443 335 418" />
+          <path class="smile" d="M416 433C443 446 475 435 487 410" />
+          <g class="alert-muzzle">
+            <path class="alert-mouth" d="M378 429C395 420 428 420 445 429C435 449 389 450 378 429Z" />
+            <path class="alert-tooth" d="M387 426L400 423L395 441Z" />
+            <path class="alert-tooth" d="M405 422L419 422L412 441Z" />
+            <path class="alert-tooth" d="M423 423L436 426L429 441Z" />
+            <path class="muzzle-wrinkle" d="M344 400C359 390 373 388 387 392" />
+            <path class="muzzle-wrinkle" d="M437 390C452 386 469 391 480 402" />
+          </g>
+          <path class="neutral-mouth" d="M396 441C405 439 417 439 426 441" />
+          <path class="worried-mouth" d="M394 443C403 437 419 437 428 443" />
+        </g>
+      </svg>
+    </div>
+
+    <button id="music-btn" aria-label="Play a loud noise">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" /></svg>
+      Play a loud noise
+    </button>
+
+    <script src="sketch.js"></script>
+  </body>
+</html>
